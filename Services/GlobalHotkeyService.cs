@@ -1,16 +1,18 @@
 using System.Diagnostics;
-using System.Windows.Interop;
+using System.Runtime.InteropServices;
 using ScreenshotManager.Helpers;
 using ScreenshotManager.Models;
 
 namespace ScreenshotManager.Services;
 
 /// <summary>
-/// Регистрация и управление глобальными хоткеями через RegisterHotKey.
+/// Регистрация и управление глобальными хоткеями через Low-Level Keyboard Hook.
+/// Это позволяет перехватывать PrintScreen и блокировать его от Windows (чтобы не было двойного скриншота).
 /// </summary>
 public sealed class GlobalHotkeyService : IDisposable
 {
-    private HwndSource? _hwndSource;
+    private IntPtr _hookId = IntPtr.Zero;
+    private readonly NativeInterop.LowLevelKeyboardProc _proc;
     private readonly Dictionary<int, HotkeyBinding> _registeredHotkeys = new();
     private bool _disposed;
 
@@ -19,55 +21,38 @@ public sealed class GlobalHotkeyService : IDisposable
     /// </summary>
     public event Action<HotkeyBinding>? HotkeyPressed;
 
+    public GlobalHotkeyService()
+    {
+        _proc = HookCallback;
+    }
+
     /// <summary>
-    /// Инициализировать сервис. Должен вызываться из UI-потока.
+    /// Инициализировать сервис.
     /// </summary>
     public void Initialize()
     {
-        var parameters = new HwndSourceParameters("ScreenshotManager_HotkeyHost")
+        using var curProcess = Process.GetCurrentProcess();
+        using var curModule = curProcess.MainModule;
+        if (curModule?.ModuleName != null)
         {
-            Width = 0,
-            Height = 0,
-            WindowStyle = 0
-        };
+            _hookId = NativeInterop.SetWindowsHookEx(
+                NativeInterop.WH_KEYBOARD_LL,
+                _proc,
+                NativeInterop.GetModuleHandle(curModule.ModuleName),
+                0);
+        }
 
-        _hwndSource = new HwndSource(parameters);
-        _hwndSource.AddHook(WndProc);
-
-        Debug.WriteLine("[GlobalHotkey] Initialized");
+        Debug.WriteLine("[GlobalHotkey] Initialized LL Hook");
     }
 
     /// <summary>
     /// Зарегистрировать хоткей.
     /// </summary>
-    /// <returns>true если регистрация прошла успешно.</returns>
     public bool RegisterHotkey(HotkeyBinding binding)
     {
-        if (_hwndSource == null)
-            throw new InvalidOperationException("Service not initialized. Call Initialize() first.");
-
-        if (_registeredHotkeys.ContainsKey(binding.Id))
-        {
-            UnregisterHotkey(binding.Id);
-        }
-
-        bool result = NativeInterop.RegisterHotKey(
-            _hwndSource.Handle,
-            binding.Id,
-            binding.Modifiers | (uint)HotkeyModifiers.NoRepeat,
-            binding.VirtualKey);
-
-        if (result)
-        {
-            _registeredHotkeys[binding.Id] = binding;
-            Debug.WriteLine($"[GlobalHotkey] Registered: {binding.DisplayName} (ID={binding.Id})");
-        }
-        else
-        {
-            Debug.WriteLine($"[GlobalHotkey] Failed to register: {binding.DisplayName}");
-        }
-
-        return result;
+        _registeredHotkeys[binding.Id] = binding;
+        Debug.WriteLine($"[GlobalHotkey] Registered: {binding.DisplayName} (ID={binding.Id})");
+        return true;
     }
 
     /// <summary>
@@ -75,9 +60,6 @@ public sealed class GlobalHotkeyService : IDisposable
     /// </summary>
     public void UnregisterHotkey(int id)
     {
-        if (_hwndSource == null) return;
-
-        NativeInterop.UnregisterHotKey(_hwndSource.Handle, id);
         _registeredHotkeys.Remove(id);
         Debug.WriteLine($"[GlobalHotkey] Unregistered: ID={id}");
     }
@@ -87,10 +69,7 @@ public sealed class GlobalHotkeyService : IDisposable
     /// </summary>
     public void UnregisterAll()
     {
-        foreach (var id in _registeredHotkeys.Keys.ToList())
-        {
-            UnregisterHotkey(id);
-        }
+        _registeredHotkeys.Clear();
     }
 
     /// <summary>
@@ -105,23 +84,49 @@ public sealed class GlobalHotkeyService : IDisposable
         }
     }
 
-    /// <summary>
-    /// Обработчик оконных сообщений.
-    /// </summary>
-    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (msg == NativeInterop.WM_HOTKEY)
+        if (nCode >= 0 && (wParam == (IntPtr)NativeInterop.WM_KEYDOWN || wParam == (IntPtr)NativeInterop.WM_SYSKEYDOWN))
         {
-            int id = wParam.ToInt32();
-            if (_registeredHotkeys.TryGetValue(id, out var binding))
+            int vkCode = Marshal.ReadInt32(lParam);
+            uint currentModifiers = GetCurrentModifiers();
+
+            foreach (var binding in _registeredHotkeys.Values)
             {
-                Debug.WriteLine($"[GlobalHotkey] Pressed: {binding.DisplayName}");
-                HotkeyPressed?.Invoke(binding);
-                handled = true;
+                // Для RegisterHotKey модификаторы включают флаг NoRepeat (0x4000), уберем его для сравнения
+                uint bindingMods = binding.Modifiers & ~(uint)HotkeyModifiers.NoRepeat;
+                
+                if (binding.VirtualKey == vkCode && bindingMods == currentModifiers)
+                {
+                    Debug.WriteLine($"[GlobalHotkey] Pressed: {binding.DisplayName}");
+                    
+                    // Запускаем событие асинхронно, чтобы не блокировать хук
+                    Task.Run(() => HotkeyPressed?.Invoke(binding));
+                    
+                    // Блокируем дальнейшую обработку этого нажатия системой (останавливает встроенный скриншотер Windows)
+                    return (IntPtr)1;
+                }
             }
         }
 
-        return IntPtr.Zero;
+        return NativeInterop.CallNextHookEx(_hookId, nCode, wParam, lParam);
+    }
+
+    private uint GetCurrentModifiers()
+    {
+        uint modifiers = (uint)HotkeyModifiers.None;
+
+        if (IsKeyPressed(NativeInterop.VK_MENU)) modifiers |= (uint)HotkeyModifiers.Alt;
+        if (IsKeyPressed(NativeInterop.VK_CONTROL)) modifiers |= (uint)HotkeyModifiers.Ctrl;
+        if (IsKeyPressed(NativeInterop.VK_SHIFT)) modifiers |= (uint)HotkeyModifiers.Shift;
+        if (IsKeyPressed(NativeInterop.VK_LWIN) || IsKeyPressed(NativeInterop.VK_RWIN)) modifiers |= (uint)HotkeyModifiers.Win;
+
+        return modifiers;
+    }
+
+    private bool IsKeyPressed(int vKey)
+    {
+        return (NativeInterop.GetAsyncKeyState(vKey) & 0x8000) != 0;
     }
 
     public void Dispose()
@@ -130,11 +135,10 @@ public sealed class GlobalHotkeyService : IDisposable
         _disposed = true;
 
         UnregisterAll();
-        if (_hwndSource != null)
+        if (_hookId != IntPtr.Zero)
         {
-            _hwndSource.RemoveHook(WndProc);
-            _hwndSource.Dispose();
-            _hwndSource = null;
+            NativeInterop.UnhookWindowsHookEx(_hookId);
+            _hookId = IntPtr.Zero;
         }
     }
 }

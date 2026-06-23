@@ -41,6 +41,15 @@ internal static class NativeInterop
 
     // ── Low-Level Keyboard Hook ───────────────────────────────────────
 
+    [DllImport("user32.dll")]
+    public static extern short GetAsyncKeyState(int vKey);
+
+    public const int VK_SHIFT = 0x10;
+    public const int VK_CONTROL = 0x11;
+    public const int VK_MENU = 0x12; // Alt
+    public const int VK_LWIN = 0x5B;
+    public const int VK_RWIN = 0x5C;
+
     public delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
