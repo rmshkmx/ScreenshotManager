@@ -30,9 +30,9 @@ jobs:
         Compress-Archive -Path publish\* -DestinationPath ScreenshotManager_Portable.zip
 
     - name: Compile Inno Setup Installer
-      uses: minicomp/iscc-action@v1
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
       with:
-        iss_file: installer.iss
+        path: installer.iss
 
     - name: Create Release and Upload Assets
       uses: softprops/action-gh-release@v2
