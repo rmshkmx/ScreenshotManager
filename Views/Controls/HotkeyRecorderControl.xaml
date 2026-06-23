@@ -1,0 +1,27 @@
+<UserControl
+    x:Class="ScreenshotManager.Views.Controls.HotkeyRecorderControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:local="clr-namespace:ScreenshotManager.Localization">
+
+    <Border Background="{ui:ThemeResource SubtleFillColorTertiaryBrush}"
+            CornerRadius="6"
+            Padding="12,8"
+            BorderBrush="{ui:ThemeResource ControlStrokeColorDefaultBrush}"
+            BorderThickness="1">
+        <DockPanel>
+            <ui:Button x:Name="BtnRecord"
+                       DockPanel.Dock="Right"
+                       Content="{Binding [record], Source={x:Static local:Loc.Instance}}"
+                       Click="BtnRecord_Click"
+                       Margin="8,0,0,0"/>
+            <TextBlock x:Name="TxtHotkey"
+                       Text="{Binding [press_keys], Source={x:Static local:Loc.Instance}}"
+                       VerticalAlignment="Center"
+                       FontSize="14"
+                       FontFamily="Consolas"
+                       Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"/>
+        </DockPanel>
+    </Border>
+</UserControl>

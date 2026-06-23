@@ -1,0 +1,258 @@
+<ui:FluentWindow
+    x:Class="ScreenshotManager.Views.SettingsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:local="clr-namespace:ScreenshotManager.Localization"
+    xmlns:controls="clr-namespace:ScreenshotManager.Views.Controls"
+    Title="{Binding [settings_title], Source={x:Static local:Loc.Instance}}"
+    Width="560"
+    Height="780"
+    MinWidth="480"
+    MinHeight="600"
+    WindowStartupLocation="CenterScreen"
+    ExtendsContentIntoTitleBar="True"
+    WindowBackdropType="Mica">
+
+    <ui:FluentWindow.Resources>
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,16,0,8"/>
+            <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}"/>
+        </Style>
+
+        <Style x:Key="SettingCard" TargetType="Border">
+            <Setter Property="Background" Value="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush" Value="{ui:ThemeResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+
+        <Style x:Key="SettingRow" TargetType="DockPanel">
+            <Setter Property="Margin" Value="0,4"/>
+        </Style>
+
+        <Style x:Key="SettingLabel" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorPrimaryBrush}"/>
+        </Style>
+
+        <Style x:Key="HintText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{ui:ThemeResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+    </ui:FluentWindow.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar -->
+        <ui:TitleBar Grid.Row="0" Title="{Binding [settings_title], Source={x:Static local:Loc.Instance}}" />
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" Padding="24,0,24,24" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- ═══════════ ОБЩИЕ НАСТРОЙКИ ═══════════ -->
+                <TextBlock x:Name="HeaderGeneral" Style="{StaticResource SectionHeader}" Text="📸 Общие настройки"/>
+
+                <Border Style="{StaticResource SettingCard}">
+                    <StackPanel>
+                        <!-- Включено -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <ui:ToggleSwitch x:Name="ToggleEnabled" DockPanel.Dock="Right" Click="ToggleEnabled_Click"/>
+                            <TextBlock x:Name="LblEnabled" Text="{Binding [enabled], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}"/>
+                        </DockPanel>
+
+                        <Separator Margin="0,6"/>
+
+                        <!-- Папка сохранения -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <ui:Button x:Name="BtnBrowse" DockPanel.Dock="Right" Content="{Binding [browse], Source={x:Static local:Loc.Instance}}" Click="BtnBrowse_Click" Margin="8,0,0,0"/>
+                            <TextBlock Text="{Binding [save_folder], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}" DockPanel.Dock="Left" Margin="0,0,8,0" MinWidth="120"/>
+                            <TextBlock x:Name="TxtSaveFolder" VerticalAlignment="Center" FontSize="12"
+                                       Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+
+                        <Separator Margin="0,6"/>
+
+                        <!-- Формат -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <ComboBox x:Name="CmbFormat" DockPanel.Dock="Right" Width="120" SelectionChanged="CmbFormat_Changed">
+                                <ComboBoxItem Content="PNG" Tag="png"/>
+                                <ComboBoxItem Content="JPEG" Tag="jpeg"/>
+                                <ComboBoxItem Content="BMP" Tag="bmp"/>
+                            </ComboBox>
+                            <TextBlock Text="{Binding [image_format], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}"/>
+                        </DockPanel>
+
+                        <Separator Margin="0,6"/>
+
+                        <!-- Запуск с Windows -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <ui:ToggleSwitch x:Name="ToggleAutostart" DockPanel.Dock="Right" Click="ToggleAutostart_Click"/>
+                            <TextBlock Text="{Binding [start_with_windows], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}"/>
+                        </DockPanel>
+
+                        <Separator Margin="0,6"/>
+
+                        <!-- Язык -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <ComboBox x:Name="CmbLanguage" DockPanel.Dock="Right" Width="140" SelectionChanged="CmbLanguage_Changed">
+                                <ComboBoxItem Content="Русский" Tag="ru"/>
+                                <ComboBoxItem Content="English" Tag="en"/>
+                            </ComboBox>
+                            <TextBlock Text="{Binding [language], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════ ИМЕНОВАНИЕ ФАЙЛОВ ═══════════ -->
+                <TextBlock x:Name="HeaderNaming" Style="{StaticResource SectionHeader}" Text="📝 Именование файлов"/>
+
+                <Border Style="{StaticResource SettingCard}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [naming_mode], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}" Margin="0,0,0,8"/>
+
+                        <RadioButton x:Name="RbDateTime" GroupName="NamingMode"
+                                     Content="{Binding [naming_datetime], Source={x:Static local:Loc.Instance}}"
+                                     Checked="NamingMode_Changed" Margin="0,2"/>
+                        <RadioButton x:Name="RbActiveApp" GroupName="NamingMode"
+                                     Content="{Binding [naming_activeapp], Source={x:Static local:Loc.Instance}}"
+                                     Checked="NamingMode_Changed" Margin="0,2"/>
+                        <RadioButton x:Name="RbAI" GroupName="NamingMode"
+                                     Content="{Binding [naming_ai], Source={x:Static local:Loc.Instance}}"
+                                     Checked="NamingMode_Changed" Margin="0,2"/>
+                        <RadioButton x:Name="RbCombined" GroupName="NamingMode"
+                                     Content="{Binding [naming_combined], Source={x:Static local:Loc.Instance}}"
+                                     Checked="NamingMode_Changed" Margin="0,2"/>
+
+                        <Separator Margin="0,8"/>
+
+                        <!-- Предпросмотр -->
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding [naming_preview], Source={x:Static local:Loc.Instance}}"
+                                       Style="{StaticResource HintText}" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="TxtNamingPreview" Style="{StaticResource HintText}" FontWeight="Medium"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════ AI-КОМПОНЕНТЫ ═══════════ -->
+                <TextBlock x:Name="HeaderAI" Style="{StaticResource SectionHeader}" Text="🤖 AI-компоненты"/>
+
+                <Border Style="{StaticResource SettingCard}">
+                    <StackPanel>
+                        <!-- Статус модели -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <TextBlock x:Name="TxtAiStatus" DockPanel.Dock="Right"
+                                       Text="{Binding [ai_not_downloaded], Source={x:Static local:Loc.Instance}}"
+                                       VerticalAlignment="Center" FontSize="13"/>
+                            <TextBlock Text="{Binding [ai_status], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}"/>
+                        </DockPanel>
+
+                        <Separator Margin="0,6"/>
+
+                        <!-- Кнопка скачивания / удаления -->
+                        <DockPanel Margin="0,4">
+                            <ui:Button x:Name="BtnDownloadAI"
+                                       Appearance="Primary"
+                                       Content="{Binding [ai_download_btn], Source={x:Static local:Loc.Instance}}"
+                                       Click="BtnDownloadAI_Click"
+                                       HorizontalAlignment="Stretch"/>
+                        </DockPanel>
+
+                        <!-- Прогресс-бар -->
+                        <StackPanel x:Name="PanelProgress" Visibility="Collapsed" Margin="0,4">
+                            <ProgressBar x:Name="ProgressDownload" Minimum="0" Maximum="100" Height="6"/>
+                            <TextBlock x:Name="TxtProgressInfo" Style="{StaticResource HintText}" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <Separator Margin="0,6"/>
+
+                        <!-- Токен HuggingFace -->
+                        <DockPanel Margin="0,4">
+                            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Width="100">
+                                <TextBlock Text="HF Token:" Style="{StaticResource SettingLabel}"/>
+                                <TextBlock FontSize="11" Margin="0,2,0,0">
+                                    <Hyperlink Click="Hyperlink_HfToken_Click">Где взять?</Hyperlink>
+                                </TextBlock>
+                            </StackPanel>
+                            <ui:TextBox x:Name="TxtHfToken" PlaceholderText="hf_..." TextChanged="TxtHfToken_TextChanged" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ═══════════ ГОРЯЧИЕ КЛАВИШИ ═══════════ -->
+                <TextBlock x:Name="HeaderHotkeys" Style="{StaticResource SectionHeader}" Text="⌨️ Горячие клавиши"/>
+
+                <Border Style="{StaticResource SettingCard}">
+                    <StackPanel>
+                        <!-- Мониторинг буфера -->
+                        <DockPanel Style="{StaticResource SettingRow}">
+                            <ui:ToggleSwitch x:Name="ToggleClipboard" DockPanel.Dock="Right" Click="ToggleClipboard_Click"/>
+                            <StackPanel>
+                                <TextBlock Text="{Binding [clipboard_monitor], Source={x:Static local:Loc.Instance}}" Style="{StaticResource SettingLabel}"/>
+                                <TextBlock Text="{Binding [clipboard_hint], Source={x:Static local:Loc.Instance}}" Style="{StaticResource HintText}"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Separator Margin="0,8"/>
+
+                        <TextBlock Text="{Binding [custom_hotkeys], Source={x:Static local:Loc.Instance}}"
+                                   Style="{StaticResource SettingLabel}" Margin="0,0,0,8"/>
+
+                        <!-- Список хоткеев -->
+                        <ItemsControl x:Name="HotkeysList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{ui:ThemeResource SubtleFillColorSecondaryBrush}"
+                                            CornerRadius="6" Padding="12,8" Margin="0,2">
+                                        <DockPanel>
+                                            <ui:Button DockPanel.Dock="Right"
+                                                       Appearance="Secondary"
+                                                       Click="BtnRemoveHotkey_Click"
+                                                       Tag="{Binding Id}"
+                                                       Margin="8,0,0,0"
+                                                       Content="✕"/>
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="14"
+                                                       FontFamily="Consolas"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Добавить хоткей -->
+                        <Border x:Name="PanelAddHotkey" Margin="0,8,0,0">
+                            <StackPanel>
+                                <controls:HotkeyRecorderControl x:Name="HotkeyRecorder"
+                                                                 HotkeyRecorded="HotkeyRecorder_HotkeyRecorded"/>
+                                <ui:Button Content="{Binding [add_hotkey], Source={x:Static local:Loc.Instance}}"
+                                           Click="BtnAddHotkey_Click"
+                                           HorizontalAlignment="Left"
+                                           Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Нижний отступ -->
+                <Border Height="24"/>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</ui:FluentWindow>

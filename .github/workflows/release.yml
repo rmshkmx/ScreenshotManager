@@ -1,0 +1,45 @@
+name: Release Setup
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger on tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Publish the application
+      run: |
+        dotnet publish ScreenshotManager.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
+
+    - name: Zip the portable version
+      run: |
+        Compress-Archive -Path publish\* -DestinationPath ScreenshotManager_Portable.zip
+
+    - name: Compile Inno Setup Installer
+      uses: minicomp/iscc-action@v1
+      with:
+        iss_file: installer.iss
+
+    - name: Create Release and Upload Assets
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          installer/ScreenshotManager_Setup.exe
+          ScreenshotManager_Portable.zip
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

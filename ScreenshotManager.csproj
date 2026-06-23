@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>ScreenshotManager</RootNamespace>
+    <AssemblyName>ScreenshotManager</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" Version="3.*" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.*" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="*" />
+    <PackageReference Include="System.Drawing.Common" Version="8.*" />
+  </ItemGroup>
+
+</Project>
