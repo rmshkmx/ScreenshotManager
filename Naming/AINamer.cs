@@ -24,12 +24,6 @@ public sealed class AINamer : INamingStrategy
 
         try
         {
-            if (!_blip.IsModelLoaded)
-            {
-                // Фолбэк на дату, если модель не загружена
-                return $"Screenshot_{now:yyyy-MM-dd}_{now:HH-mm-ss}";
-            }
-
             var caption = await _blip.GenerateCaptionAsync(screenshot);
             var cleanCaption = CleanCaption(caption);
 

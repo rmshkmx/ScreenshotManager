@@ -82,10 +82,29 @@ public sealed class BlipInferenceService : IDisposable
 
     /// <summary>
     /// Сгенерировать текстовое описание для изображения.
+    /// Модель загружается на время inference и выгружается после для экономии ОЗУ.
     /// </summary>
     public async Task<string> GenerateCaptionAsync(Bitmap image)
     {
-        return await Task.Run(() => GenerateCaption(image));
+        return await Task.Run(() =>
+        {
+            try
+            {
+                if (!IsModelLoaded)
+                {
+                    Debug.WriteLine("[BlipInference] Loading model on-demand for inference...");
+                    LoadModel();
+                }
+
+                return GenerateCaption(image);
+            }
+            finally
+            {
+                // Выгрузить модель сразу после inference для экономии ~1 ГБ ОЗУ
+                Debug.WriteLine("[BlipInference] Unloading model after inference to save RAM...");
+                UnloadModel();
+            }
+        });
     }
 
     /// <summary>

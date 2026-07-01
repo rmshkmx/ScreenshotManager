@@ -100,6 +100,8 @@ public sealed class Loc : INotifyPropertyChanged
             ["notify_error"] = "Ошибка сохранения",
             ["notify_ai_ready"] = "AI-модель загружена и готова",
             ["notify_ai_error"] = "Ошибка загрузки AI-модели",
+            ["notify_started"] = "Программа запущена",
+            ["notify_started_text"] = "ScreenshotManager работает в фоновом режиме",
         },
 
         ["en"] = new()
@@ -162,6 +164,8 @@ public sealed class Loc : INotifyPropertyChanged
             ["notify_error"] = "Save error",
             ["notify_ai_ready"] = "AI model loaded and ready",
             ["notify_ai_error"] = "AI model download error",
+            ["notify_started"] = "App started",
+            ["notify_started_text"] = "ScreenshotManager is running in the background",
         }
     };
 }

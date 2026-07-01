@@ -23,19 +23,16 @@ public sealed class CombinedNamer : INamingStrategy
 
         try
         {
-            if (_blip.IsModelLoaded)
+            var caption = await _blip.GenerateCaptionAsync(screenshot);
+            var cleanCaption = AINamer.CleanCaption(caption);
+
+            if (!string.IsNullOrWhiteSpace(cleanCaption))
             {
-                var caption = await _blip.GenerateCaptionAsync(screenshot);
-                var cleanCaption = AINamer.CleanCaption(caption);
+                // Ограничить длину AI-описания
+                if (cleanCaption.Length > 40)
+                    cleanCaption = cleanCaption[..40].TrimEnd('_');
 
-                if (!string.IsNullOrWhiteSpace(cleanCaption))
-                {
-                    // Ограничить длину AI-описания
-                    if (cleanCaption.Length > 40)
-                        cleanCaption = cleanCaption[..40].TrimEnd('_');
-
-                    return $"{safeName}_{cleanCaption}_{now:yyyy-MM-dd}_{now:HH-mm}";
-                }
+                return $"{safeName}_{cleanCaption}_{now:yyyy-MM-dd}_{now:HH-mm}";
             }
         }
         catch (Exception ex)

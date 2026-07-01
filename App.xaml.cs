@@ -67,12 +67,12 @@ public partial class App : Application
         _hotkeyService.Initialize();
         ApplySettings();
 
-        // Загрузить AI-модель если AI-именование было включено
-        if (_settingsService.Settings.AiNamingEnabled && _modelDownloadService.IsModelDownloaded())
-        {
-            try { _blipService.LoadModel(); }
-            catch (Exception ex) { Debug.WriteLine($"[App] AI load error: {ex.Message}"); }
-        }
+        // Показать уведомление о запуске в трее
+        _trayIcon.ShowBalloonTip(
+            3000,
+            Loc.Instance["notify_started"],
+            Loc.Instance["notify_started_text"],
+            WinForms.ToolTipIcon.Info);
 
         Debug.WriteLine("[App] Started successfully");
     }
